@@ -4,10 +4,10 @@ from .serializers import UserSerializer,ToDoSerializer
 from rest_framework.response import Response
 from .models import User,ToDo
 from rest_framework.exceptions import AuthenticationFailed
-# Create your views here.
+
 import jwt,datetime
-# from datetime import datetime  # Import datetime module
-from .dt import get_current_time_formatted
+
+from .dt import get_current_time_formatted,
 
 
 
@@ -67,7 +67,7 @@ class LogoutView(APIView):
         return response
 
 
-# Add task using current login user
+
 class AddView(APIView):
     def post(self, request):
         token = request.COOKIES.get('jwt')
@@ -81,20 +81,21 @@ class AddView(APIView):
         serializer = UserSerializer(user)
         user_id = serializer.data['id']
         # ////////////////////////////////////////
-        # Extract task data from request
+        
         title = request.data.get('title')
         desc = request.data.get('desc')
         time=request.data.get('time')
-
-        # Check if title and desc are provided
+        if not check_time_format(time):
+            return Response({'message': 'Time format is not correct.'}, status=400)
+        
         if not title or not desc:
             return Response({'message': 'Title and description are required.'}, status=400)
 
-        # Assuming you have a Task model, create and save a task
+        
         task = ToDo(user=user, title=title, description=desc, time=time)
         task.save()
 
-        # Create a response indicating success
+        
         response = Response({
             'message': 'Task added successfully',
             'title': title,
@@ -120,13 +121,13 @@ class ListView(APIView):
         user_id = serializer.data['id']
         # print(user)
 
-        # Define current_time and use it for filtering
+        
         current_time = get_current_time_formatted()
         print(current_time)
         
         
 
-        # Filter ToDo objects based on user_id and time
+        
         all_tasks = ToDo.objects.filter(user=user)
         expired_tasks = all_tasks.filter(time__lt=current_time,completed=False)
         pending_tasks = all_tasks.filter(time__gte=current_time, completed=False)
@@ -136,7 +137,7 @@ class ListView(APIView):
         # print("pending_tasks",pending_tasks) 
         # print("completed_tasks",completed_tasks)
         # print("expired_tasks",expired_tasks)
-        # Serialize the filtered tasks
+        
         all_tasks_serializer = ToDoSerializer(all_tasks, many=True)
         expired_tasks_serializer = ToDoSerializer(expired_tasks, many=True)
         pending_tasks_serializer = ToDoSerializer(pending_tasks, many=True)
@@ -165,21 +166,22 @@ class UpdateView(APIView):
         serializer = UserSerializer(user)
         user_id = serializer.data['id']
         # ////////////////////////////////////////
-        # Extract task data from request
+        
         title = request.data.get('title')
         desc = request.data.get('description')
         time=request.data.get('time')
         completed=request.data.get('completed')
         task_id=request.data.get('task_id')
-        # Check if title and desc are provided
+        if not check_time_format(time):
+            return Response({'message': 'Time format is not correct.'}, status=400)
         if not title or not desc:
             return Response({'message': 'Title and description are required.'}, status=400)
 
-        # Assuming you have a Task model, create and save a task
+        
         task = ToDo(id=task_id,user=user, title=title, description=desc, time=time,completed=completed)
         task.save()
 
-        # Create a response indicating success
+        
         response = Response({
             'message': 'Task updated successfully',
             'title': title,
@@ -203,17 +205,17 @@ class DeleteView(APIView):
         serializer = UserSerializer(user)
         user_id = serializer.data['id']
         # ////////////////////////////////////////
-        # Extract task data from request
+        
         task_id=request.data.get('task_id')
-        # Check if title and desc are provided
+        
         if not task_id:
             return Response({'message': 'Task id is required.'}, status=400)
 
-        # Assuming you have a Task model, create and save a task
+        
         task = ToDo.objects.filter(id=task_id)
         task.delete()
 
-        # Create a response indicating success
+        
         response = Response({
             'message': 'Task deleted successfully',
             'task_id': task_id,
